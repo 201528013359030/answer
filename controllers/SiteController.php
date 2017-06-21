@@ -34,8 +34,8 @@ class SiteController extends Controller {
 
 		// 获取url参数
 		$action = isset ( $_POST ['action'] ) ? $_POST ['action'] : 0;
-		$name = isset ( $_POST ['name'] ) ? $_POST ['name'] : 0;
-		$psd = isset ( $_POST ['psd'] ) ? $_POST ['psd'] : 0;
+		$name = isset ( $_POST ['name'] ) ? $_POST ['userName'] : 0;
+		$psd = isset ( $_POST ['psd'] ) ? $_POST ['userPwd'] : 0;
 
 
 		if ($action === 'login') {
