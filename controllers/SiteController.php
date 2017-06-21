@@ -8,6 +8,7 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use yii\helpers\Json;
 
 class SiteController extends Controller {
 	public $enableCsrfValidation = false;
@@ -67,21 +68,23 @@ class SiteController extends Controller {
 		];
 	}
 
-
 	/**
 	 * Displays homepage.
 	 *
-	 * @return string
+	 * @return Json
 	 */
 	public function actionIndex() {
 		// 创建连接
-// 		$this->conn = new \mysqli($this->servername, $this->username, $this->password, $this->dbname );
 		$this->conn = \yii::$app->db;
 
+		// 响应数据格式为json
+		Yii::$app->response->format=\yii\web\Response::FORMAT_JSON;
+
 		// 获取url参数
-		$action = isset ( $_POST ['action'] ) ? $_POST ['action'] : 0;
-		$name = isset ( $_POST ['name'] ) ? $_POST ['userName'] : 0;
-		$psd = isset ( $_POST ['psd'] ) ? $_POST ['userPwd'] : 0;
+		$action = isset ( $_POST ['action'] ) ? $_POST ['action'] : '';
+		$name = isset ( $_POST ['userName'] ) ? $_POST ['userName'] : '';
+		$psd = isset ( $_POST ['userPwd'] ) ? $_POST ['userPwd'] : '';
+		$psd = md5($psd);
 
 
 		if ($action === 'login') {
@@ -99,29 +102,12 @@ class SiteController extends Controller {
 			$json = json_encode ( $result );
 			echo $json;
 		}
-
-		// 关闭连接
-		function close_conn() {
-			mysql_close ( $this->$conn );
-		}
-
-// 		$db = \Yii::$app->db;
-
-// 		$sql = "select * from $this->user";
-// 		$result = $db->createCommand ( $sql )->queryAll ();
-
-// 		// $return = array(
-// 		// "message"=>"Hello World!",
-// 		// "name"=>"方业全"
-// 		// );
-// 		$return = json_encode ( $result );
-// 		return $return;
 	}
 
 	/**
 	 * 用户登录
-	 *
-	 * @return string
+	 * @param
+	 * @return Json
 	 */
 	function login($name, $psd, $normal) {
 		$conn = $this->conn;
@@ -165,16 +151,15 @@ class SiteController extends Controller {
 	/**
 	 * 用户注册
 	 *
-	 * @return
+	 * @return Json
 	 *
 	 */
-	public function register($name, $psd, $mobile = 0) {
+	function register($name, $psd) {
 
-		$mobile = isset ( $_POST ['mobile'] ) ? $_POST ['mobile'] : 0;
-		$eMail = isset($_POST['eMail']) ? $_POST['eMail']:0;
-		$registerType = isset($_POST['registerType'])?$_POST['registerType']:0;
-		$mobile = isset($_POST['mobile'])?$_POST['mobile']:0;
-		$sex = isset($_POST['sex'])?$_POST['sex']:0;
+		$eMail = isset($_POST['eMail']) ? $_POST['eMail']:NULL;
+		$registerType = isset($_POST['registerType'])?$_POST['registerType']:null;
+		$mobile = isset($_POST['mobile'])?$_POST['mobile']:null;
+		$sex = isset($_POST['sex'])?$_POST['sex']:null;
 		$conn = $this->conn;
 		if ($conn) {
 
@@ -197,9 +182,8 @@ class SiteController extends Controller {
 
 			// 插入数据库
 			if (! $exist) {
-
-				$sql = "insert into $this->user ('userName','userPwd','eMail','sex',mobile','registerType') values($name,  $psd, $eMail,$sex,$mobile,$registerType)";
-				$success = $conn->createCommand($sql)->queryAll();
+				$sql = "insert into $this->user (userName,userPwd,eMail,sex,mobile,registerType) values ('".$name."','".$psd."','".$eMail."','".$sex."','".$mobile."','".$registerType."');";
+				$success = $conn->createCommand($sql)->execute();
 				if ($success) {
 					// 注册成功
 					$register_result = array (
@@ -224,18 +208,19 @@ class SiteController extends Controller {
 	}
 	/**
 	 * 修改登录密码
+	 * @return json
 	 */
 	function modifyPsd($name, $psd) {
 
-		$newpsd = isset ( $_POST ['newpsd'] ) ? $_POST ['newpsd'] : 0;
+		$newpsd = isset ( $_POST ['newpsd'] ) ? $_POST ['newpsd'] : NULL;
 		$conn = $this->conn;
 		if ($conn) {
 			// 用户登录
 			$login_result = $this->login ( $name, $psd, false );
 			// 修改密码
 			if ($login_result) {
-				$sql = "update $this->user set userPwd='$newpsd' where userName='$name'";
-				$success = $conn->createCommand($sql)->queryAll();
+				$sql = "update $this->user set userPwd=$newpsd where userName=$name";
+				$success = $conn->createCommand($sql)->execute();
 				if ($success) {
 					// 修改成功
 					$modify_result = array (
@@ -266,6 +251,7 @@ class SiteController extends Controller {
 
 	/**
 	 * 显示所有用户
+	 * @return json
 	 */
 	function showAll() {
 		$conn = $this->conn;
@@ -296,31 +282,5 @@ class SiteController extends Controller {
 			$json = json_encode ( $data );
 			echo $json;
 		}
-	}
-
-	/**
-	 * Displays contact page.
-	 *
-	 * @return string
-	 */
-	public function actionContact() {
-		$model = new ContactForm ();
-		if ($model->load ( Yii::$app->request->post () ) && $model->contact ( Yii::$app->params ['adminEmail'] )) {
-			Yii::$app->session->setFlash ( 'contactFormSubmitted' );
-
-			return $this->refresh ();
-		}
-		return $this->render ( 'contact', [
-				'model' => $model
-		] );
-	}
-
-	/**
-	 * Displays about page.
-	 *
-	 * @return string
-	 */
-	public function actionAbout() {
-		return $this->render ( 'about' );
 	}
 }
