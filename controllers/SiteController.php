@@ -283,7 +283,7 @@ class SiteController extends Controller {
 // 			while ( $row = mysql_fetch_array ( $result ) ) {
 			foreach ($result as $row){
 				$array_temp = array (
-						"name" => $row ['uerName'],
+						"name" => $row ['userName'],
 						"tel" => $row ['mobile']
 				);
 				array_push ( $array_data, $array_temp );
