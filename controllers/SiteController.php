@@ -20,8 +20,8 @@ class SiteController extends Controller {
 	/**
 	 * construct function
 	 */
-	function __construct() {
-	}
+// 	function __construct() {
+// 	}
 	/**
 	 * Displays homepage.
 	 *
@@ -29,20 +29,22 @@ class SiteController extends Controller {
 	 */
 	public function actionIndex() {
 		// 创建连接
-		$this->$conn = new \mysqli($servername, $username, $password, $dbname );
+// 		$this->conn = new \mysqli($this->servername, $this->username, $this->password, $this->dbname );
+		$this->conn = \yii::$app->db;
 
 		// 获取url参数
 		$action = isset ( $_POST ['action'] ) ? $_POST ['action'] : 0;
 		$name = isset ( $_POST ['name'] ) ? $_POST ['name'] : 0;
 		$psd = isset ( $_POST ['psd'] ) ? $_POST ['psd'] : 0;
 
-		if ($action == 'login') {
-			$this->actionLogin ( $name, $psd, true );
-		} else if ($action == 'register') {
+
+		if ($action === 'login') {
+			$this->login ( $name, $psd, true );
+		} else if ($action === 'register') {
 			$this->register ( $name, $psd);
-		} else if ($action == 'modifyPsd') {
+		} else if ($action === 'modifyPsd') {
 			$this->modifyPsd ( $name, $psd);
-		} else if ($action == 'showAll') {
+		} else if ($action === 'showAll') {
 			$this->showAll ();
 		} else {
 			$result = array (
@@ -77,10 +79,14 @@ class SiteController extends Controller {
 	 */
 	function login($name, $psd, $normal) {
 		$conn = $this->conn;
+		$sql = "select userName,userPwd from $this->user";
+		$result = $conn->createCommand ( $sql )->queryAll ();
+
 		if ($conn) {
-			$result = mysql_query ( "select name,psd from $this->user" );
+			$sql = "select userId,userName,userPwd from $this->user";
+			$result = $conn->createCommand ( $sql )->queryAll ();
 			$success = false;
-			while ( $row = mysql_fetch_array ( $result ) ) {
+			foreach ( $result as $row ) {
 				if ($name == $row ['userName'] && $psd == $row ['userPwd']) {
 					$success = true;
 					$_SESSION['userId'] = $row['userId'];
@@ -126,12 +132,11 @@ class SiteController extends Controller {
 		$conn = $this->conn;
 		if ($conn) {
 
-			// 选择数据库
-			mysql_select_db ( $this->conn, $this->dbname );
 			// 数据库查询
-			$result = mysql_query ( "select userName from $this->user" );
+			$sql = "select userName from $this->user";
+			$result = $conn->createCommand($sql)->queryAll();
 			$exist = false;
-			while ( $row = mysql_fetch_array ( $result ) ) {
+			foreach ($result as $row){
 				if ($name == $row ['userName']) {
 					// 注册失败，用户名已存在;
 					$exist = true;
@@ -147,8 +152,8 @@ class SiteController extends Controller {
 			// 插入数据库
 			if (! $exist) {
 
-				$id = mysql_num_rows ( $result ) + 1;
-				$success = mysql_query ( "insert into $this->user ('userName','userPwd','eMail','sex',mobile','registerType') values($name,  $psd, $eMail,$sex,$mobile,$registerType)" );
+				$sql = "insert into $this->user ('userName','userPwd','eMail','sex',mobile','registerType') values($name,  $psd, $eMail,$sex,$mobile,$registerType)";
+				$success = $conn->createCommand($sql)->queryAll();
 				if ($success) {
 					// 注册成功
 					$register_result = array (
@@ -180,10 +185,11 @@ class SiteController extends Controller {
 		$conn = $this->conn;
 		if ($conn) {
 			// 用户登录
-			$login_result = login ( $name, $psd, false );
+			$login_result = $this->login ( $name, $psd, false );
 			// 修改密码
 			if ($login_result) {
-				$success = mysql_query ( "update $this->user set userPwd='$newpsd' where userName='$name'" );
+				$sql = "update $this->user set userPwd='$newpsd' where userName='$name'";
+				$success = $conn->createCommand($sql)->queryAll();
 				if ($success) {
 					// 修改成功
 					$modify_result = array (
@@ -218,16 +224,18 @@ class SiteController extends Controller {
 	function showAll() {
 		$conn = $this->conn;
 		if ($conn) {
-			$result = mysql_query ( "select * from $this->user" );
+			$sql = "select * from $this->user";
+			$result = $conn->createCommand($sql)->queryAll();
 			$success = false;
 			$array_data = array ();
 
-			$total = mysql_num_rows ( $result );
+			$total = count($result);
 			// $data = array("total"=>$total,"datas"=>array(array("data"=>"123","name"=>"zhugeheng"),
 			// array("data"=>"456","name"=>"zhaodanni")
 			// ));
 
-			while ( $row = mysql_fetch_array ( $result ) ) {
+// 			while ( $row = mysql_fetch_array ( $result ) ) {
+			foreach ($result as $row){
 				$array_temp = array (
 						"name" => $row ['uerName'],
 						"tel" => $row ['mobile']
